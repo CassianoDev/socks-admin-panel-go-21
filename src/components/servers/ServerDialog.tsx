@@ -19,10 +19,19 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Server, ServerFormValues } from "@/types/types";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { X, Plus } from "lucide-react";
 
 // Form schema
 const serverFormSchema = z.object({
@@ -95,7 +104,19 @@ export default function ServerDialog({
       cdn: false,
       cdnName: "",
       capacity: 100,
+      cdns: {
+        cloudflare: [],
+        googlecloud: [],
+        cloudfront: []
+      }
     },
+  });
+
+  const [activeTab, setActiveTab] = useState("cloudflare");
+  const [cdnDomains, setCdnDomains] = useState({
+    cloudflare: [""],
+    googlecloud: [""],
+    cloudfront: [""]
   });
 
   // Reset form when server changes
@@ -123,6 +144,18 @@ export default function ServerDialog({
           cdn: server.cdn,
           cdnName: server.cdnName,
           capacity: server.capacity,
+          cdns: server.cdns || {
+            cloudflare: [],
+            googlecloud: [],
+            cloudfront: []
+          }
+        });
+        
+        // Update local state for CDN domains
+        setCdnDomains({
+          cloudflare: server.cdns?.cloudflare?.length ? server.cdns.cloudflare : [""],
+          googlecloud: server.cdns?.googlecloud?.length ? server.cdns.googlecloud : [""],
+          cloudfront: server.cdns?.cloudfront?.length ? server.cdns.cloudfront : [""],
         });
       } else {
         form.reset({
@@ -146,13 +179,83 @@ export default function ServerDialog({
           cdn: false,
           cdnName: "",
           capacity: 100,
+          cdns: {
+            cloudflare: [],
+            googlecloud: [],
+            cloudfront: []
+          }
+        });
+        
+        // Reset local state for CDN domains
+        setCdnDomains({
+          cloudflare: [""],
+          googlecloud: [""],
+          cloudfront: [""]
         });
       }
     }
   }, [form, server, open]);
 
+  // Add a domain input to the current CDN tab
+  const addDomainField = (cdnType: 'cloudflare' | 'googlecloud' | 'cloudfront') => {
+    setCdnDomains(prev => ({
+      ...prev,
+      [cdnType]: [...prev[cdnType], ""]
+    }));
+  };
+
+  // Remove a domain input from the current CDN tab
+  const removeDomainField = (cdnType: 'cloudflare' | 'googlecloud' | 'cloudfront', index: number) => {
+    if (cdnDomains[cdnType].length > 1) {
+      setCdnDomains(prev => ({
+        ...prev,
+        [cdnType]: prev[cdnType].filter((_, i) => i !== index)
+      }));
+    }
+  };
+
+  // Update domain value in the local state and form
+  const updateDomain = (cdnType: 'cloudflare' | 'googlecloud' | 'cloudfront', index: number, value: string) => {
+    // Update local state
+    setCdnDomains(prev => {
+      const newDomains = [...prev[cdnType]];
+      newDomains[index] = value;
+      return { ...prev, [cdnType]: newDomains };
+    });
+    
+    // Update form state with filtered domains (remove empty ones)
+    const updatedDomains = {
+      ...cdnDomains,
+      [cdnType]: [
+        ...cdnDomains[cdnType].slice(0, index),
+        value,
+        ...cdnDomains[cdnType].slice(index + 1)
+      ]
+    };
+    
+    const filteredDomains = {
+      cloudflare: updatedDomains.cloudflare.filter(d => d.trim() !== ""),
+      googlecloud: updatedDomains.googlecloud.filter(d => d.trim() !== ""),
+      cloudfront: updatedDomains.cloudfront.filter(d => d.trim() !== "")
+    };
+    
+    form.setValue('cdns', filteredDomains);
+  };
+
   const handleSubmit = (data: ServerFormValues) => {
-    onSubmit(data);
+    // Filter out empty domains before submitting
+    const filteredCdns = {
+      cloudflare: cdnDomains.cloudflare.filter(d => d.trim() !== ""),
+      googlecloud: cdnDomains.googlecloud.filter(d => d.trim() !== ""),
+      cloudfront: cdnDomains.cloudfront.filter(d => d.trim() !== "")
+    };
+    
+    const finalData = {
+      ...data,
+      cdns: filteredCdns
+    };
+    
+    onSubmit(finalData);
   };
 
   return (
@@ -498,19 +601,150 @@ export default function ServerDialog({
             </div>
             
             {form.watch("cdn") && (
-              <FormField
-                control={form.control}
-                name="cdnName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CDN Provider</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Cloudflare" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="cdnName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CDN Provider</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select CDN provider" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="cloudflare">Cloudflare</SelectItem>
+                          <SelectItem value="googlecloud">Google Cloud</SelectItem>
+                          <SelectItem value="cloudfront">CloudFront (AWS)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Select a CDN provider to configure domains
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="border rounded-md p-4">
+                  <h3 className="text-sm font-medium mb-3">CDN Domains</h3>
+                  
+                  <Tabs 
+                    defaultValue="cloudflare" 
+                    value={activeTab} 
+                    onValueChange={setActiveTab}
+                    className="w-full"
+                  >
+                    <TabsList className="grid grid-cols-3 mb-4">
+                      <TabsTrigger value="cloudflare">Cloudflare</TabsTrigger>
+                      <TabsTrigger value="googlecloud">Google Cloud</TabsTrigger>
+                      <TabsTrigger value="cloudfront">CloudFront</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="cloudflare" className="space-y-3">
+                      {cdnDomains.cloudflare.map((domain, index) => (
+                        <div key={`cloudflare-${index}`} className="flex items-center space-x-2">
+                          <Input
+                            value={domain}
+                            onChange={(e) => updateDomain('cloudflare', index, e.target.value)}
+                            placeholder="cdn.example.com"
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeDomainField('cloudflare', index)}
+                            disabled={cdnDomains.cloudflare.length === 1}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addDomainField('cloudflare')}
+                        className="mt-2"
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Cloudflare Domain
+                      </Button>
+                    </TabsContent>
+                    
+                    <TabsContent value="googlecloud" className="space-y-3">
+                      {cdnDomains.googlecloud.map((domain, index) => (
+                        <div key={`googlecloud-${index}`} className="flex items-center space-x-2">
+                          <Input
+                            value={domain}
+                            onChange={(e) => updateDomain('googlecloud', index, e.target.value)}
+                            placeholder="cdn.example.com"
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeDomainField('googlecloud', index)}
+                            disabled={cdnDomains.googlecloud.length === 1}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addDomainField('googlecloud')}
+                        className="mt-2"
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Google Cloud Domain
+                      </Button>
+                    </TabsContent>
+                    
+                    <TabsContent value="cloudfront" className="space-y-3">
+                      {cdnDomains.cloudfront.map((domain, index) => (
+                        <div key={`cloudfront-${index}`} className="flex items-center space-x-2">
+                          <Input
+                            value={domain}
+                            onChange={(e) => updateDomain('cloudfront', index, e.target.value)}
+                            placeholder="cdn.example.com"
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeDomainField('cloudfront', index)}
+                            disabled={cdnDomains.cloudfront.length === 1}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addDomainField('cloudfront')}
+                        className="mt-2"
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add CloudFront Domain
+                      </Button>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+              </div>
             )}
             
             <DialogFooter>

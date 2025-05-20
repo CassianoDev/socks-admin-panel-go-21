@@ -1,7 +1,9 @@
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { X, Plus, Clipboard } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Dialog,
   DialogContent,
@@ -9,8 +11,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, X, Edit3, Save } from "lucide-react";
 
 interface HostListEditorProps {
   value: string;
@@ -18,153 +18,133 @@ interface HostListEditorProps {
 }
 
 export default function HostListEditor({ value, onChange }: HostListEditorProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [hosts, setHosts] = useState<string[]>(
-    value ? value.split(";").filter(Boolean) : []
-  );
-  const [newHost, setNewHost] = useState("");
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editValue, setEditValue] = useState("");
+  const [hosts, setHosts] = useState<string[]>(value ? value.split(";") : [""]);
+  const [bulkPasteDialogOpen, setBulkPasteDialogOpen] = useState(false);
+  const [bulkPasteContent, setBulkPasteContent] = useState("");
+  
+  // Update the parent component's value whenever hosts change
+  const updateParentValue = (newHosts: string[]) => {
+    const filteredHosts = newHosts.filter(host => host.trim() !== "");
+    onChange(filteredHosts.join(";"));
+    setHosts(filteredHosts.length > 0 ? filteredHosts : [""]);
+  };
 
-  // Generate a display string for the hosts
-  const getDisplayValue = (hostList: string[]) => {
-    if (hostList.length === 0) return "No hosts configured";
-    if (hostList.length === 1) return hostList[0];
-    return `${hostList[0]} +${hostList.length - 1} more`;
+  const handleHostChange = (index: number, newValue: string) => {
+    const newHosts = [...hosts];
+    newHosts[index] = newValue;
+    setHosts(newHosts);
+    updateParentValue(newHosts);
   };
 
   const handleAddHost = () => {
-    if (newHost.trim()) {
-      const updatedHosts = [...hosts, newHost.trim()];
-      setHosts(updatedHosts);
-      setNewHost("");
-    }
+    setHosts([...hosts, ""]);
   };
 
   const handleRemoveHost = (index: number) => {
-    const updatedHosts = hosts.filter((_, i) => i !== index);
-    setHosts(updatedHosts);
+    const newHosts = hosts.filter((_, i) => i !== index);
+    updateParentValue(newHosts);
   };
 
-  const handleStartEdit = (index: number) => {
-    setEditingIndex(index);
-    setEditValue(hosts[index]);
+  const handleBulkPaste = () => {
+    setBulkPasteDialogOpen(true);
   };
 
-  const handleSaveEdit = () => {
-    if (editingIndex !== null) {
-      const updatedHosts = [...hosts];
-      if (editValue.trim()) {
-        updatedHosts[editingIndex] = editValue.trim();
-      }
-      setHosts(updatedHosts);
-      setEditingIndex(null);
+  const processBulkPaste = () => {
+    if (!bulkPasteContent.trim()) {
+      setBulkPasteDialogOpen(false);
+      return;
+    }
+
+    // Split by common delimiters (newline, comma, semicolon)
+    const pastedHosts = bulkPasteContent
+      .split(/[\n,;]+/)
+      .map(host => host.trim())
+      .filter(host => host !== "");
+
+    if (pastedHosts.length > 0) {
+      updateParentValue(pastedHosts);
+      setBulkPasteContent("");
+      setBulkPasteDialogOpen(false);
     }
   };
 
-  const handleSave = () => {
-    onChange(hosts.join(";"));
-    setIsOpen(false);
-  };
-
   return (
-    <>
-      <div className="flex gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setIsOpen(true)}
-          className="w-full justify-between text-left font-normal"
-        >
-          <span className="truncate">{getDisplayValue(hosts)}</span>
-          <Edit3 className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
+    <div className="space-y-2">
+      <div className="flex justify-between items-center mb-2">
+        <span className="text-sm text-muted-foreground">
+          {hosts.filter(h => h.trim() !== "").length} host(s) configured
+        </span>
+        <div className="flex space-x-2">
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm"
+            onClick={handleBulkPaste}
+          >
+            <Clipboard className="mr-1 h-4 w-4" />
+            Bulk Paste
+          </Button>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm"
+            onClick={handleAddHost}
+          >
+            <Plus className="mr-1 h-4 w-4" />
+            Add Host
+          </Button>
+        </div>
       </div>
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[550px]">
+      {hosts.map((host, index) => (
+        <div key={index} className="flex items-center space-x-2">
+          <Input
+            value={host}
+            onChange={(e) => handleHostChange(index, e.target.value)}
+            placeholder="hostname:port"
+            className="flex-1"
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => handleRemoveHost(index)}
+            disabled={hosts.length === 1 && host === ""}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      ))}
+
+      <Dialog open={bulkPasteDialogOpen} onOpenChange={setBulkPasteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Manage Host List</DialogTitle>
+            <DialogTitle>Paste Multiple Hosts</DialogTitle>
           </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="flex gap-2">
-              <Input 
-                placeholder="Enter host (e.g. 127.0.0.1:80)"
-                value={newHost}
-                onChange={(e) => setNewHost(e.target.value)}
-              />
-              <Button type="button" onClick={handleAddHost} size="icon">
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {hosts.length > 0 ? (
-              <ScrollArea className="h-[250px] rounded-md border p-2">
-                <div className="space-y-2">
-                  {hosts.map((host, index) => (
-                    <div 
-                      key={index} 
-                      className="flex items-center justify-between p-2 rounded-md bg-muted/30"
-                    >
-                      {editingIndex === index ? (
-                        <div className="flex-1 flex gap-2">
-                          <Input 
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            autoFocus
-                          />
-                          <Button 
-                            size="icon" 
-                            variant="ghost" 
-                            onClick={handleSaveEdit}
-                          >
-                            <Save className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <>
-                          <span className="flex-1 font-mono text-sm">{host}</span>
-                          <div className="flex gap-1">
-                            <Button 
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleStartEdit(index)}
-                            >
-                              <Edit3 className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button 
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleRemoveHost(index)}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            ) : (
-              <div className="h-[100px] flex items-center justify-center text-muted-foreground">
-                No hosts added. Add a host to get started.
-              </div>
-            )}
+          
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Paste a list of hosts (one per line, or separated by commas/semicolons)
+            </p>
+            <Textarea
+              value={bulkPasteContent}
+              onChange={(e) => setBulkPasteContent(e.target.value)}
+              placeholder="host1:port1&#10;host2:port2&#10;host3:port3"
+              className="min-h-[150px]"
+              autoFocus
+            />
           </div>
-
+          
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsOpen(false)}>
+            <Button variant="outline" onClick={() => setBulkPasteDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSave}>
-              Save Changes
+            <Button onClick={processBulkPaste}>
+              Add Hosts
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }
