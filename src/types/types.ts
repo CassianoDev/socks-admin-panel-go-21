@@ -94,16 +94,16 @@ export interface UserFormValues {
 // Formulário para componente ServerDialog
 export interface ServerFormValues {
   cloudFlareDomain: string;
-  dnsttDomain: string;
+  dnsttDomain?: string;
   country: string;
   city: string;
   state: string;
   ipv4: string;
-  ipv6: string;
-  portHTTP: string;
-  portTLS: string;
-  portUDP: string;
-  portDNSTT: string;
+  ipv6?: string;
+  portHTTP?: string;
+  portTLS?: string;
+  portUDP?: string;
+  portDNSTT?: string;
   premium: boolean;
   invisible: boolean;
   tls: boolean;
@@ -111,7 +111,7 @@ export interface ServerFormValues {
   http: boolean;
   dnstt: boolean;
   cdn: boolean;
-  cdnName: string;
+  cdnName?: string;
   capacity: string | number;
 }
 
@@ -119,15 +119,15 @@ export interface ServerFormValues {
 export interface ConfigFormValues {
   name: string;
   host: string;
-  dnsHost: string;
-  sni: string;
-  payload: string;
+  dnsHost?: string;
+  sni?: string;
+  payload?: string;
   type: string;
   default: boolean;
   cdn: boolean;
-  cdnName: string;
+  cdnName?: string;
   notes: boolean;
-  noteMsg: string;
+  noteMsg?: string;
   testPriority: string | number;
   operator: string;
   multiproxy: boolean;

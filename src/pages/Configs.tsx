@@ -13,11 +13,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import ConfigTable from "@/components/configs/ConfigTable";
-import ConfigDialog, { ConfigFormValues } from "@/components/configs/ConfigDialog";
-import { Config } from "@/types/types";
+import ConfigDialog from "@/components/configs/ConfigDialog";
+import { Config, ConfigFormValues } from "@/types/types";
 import { configs as mockConfigs } from "@/lib/mock";
 import { PlusCircle, Search } from "lucide-react";
 import { toast } from "sonner";
+import HostListEditor from "@/components/configs/HostListEditor";
 
 export default function Configs() {
   const [configs, setConfigs] = useState<Config[]>(mockConfigs);
@@ -28,8 +29,8 @@ export default function Configs() {
 
   const filteredConfigs = configs.filter(config => 
     config.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    config.operator.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    config.host.includes(searchTerm)
+    config.host.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    config.type.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleEdit = (config: Config) => {
@@ -45,7 +46,7 @@ export default function Configs() {
   const confirmDelete = () => {
     if (selectedConfig) {
       setConfigs(configs.filter(c => c._id !== selectedConfig._id));
-      toast.success(`Configuration ${selectedConfig.name} deleted successfully`);
+      toast.success(`Config ${selectedConfig.name} deleted successfully`);
       setDeleteDialogOpen(false);
     }
   };
@@ -60,7 +61,7 @@ export default function Configs() {
           testPriority: typeof data.testPriority === 'string' ? parseInt(data.testPriority, 10) : data.testPriority 
         } : c
       ));
-      toast.success(`Configuration ${data.name} updated successfully`);
+      toast.success(`Config ${data.name} updated successfully`);
     } else {
       // Add new config
       const newConfig: Config = {
@@ -68,14 +69,14 @@ export default function Configs() {
         name: data.name,
         host: data.host,
         dnsHost: data.dnsHost || "",
-        sni: data.sni || "same",
+        sni: data.sni || "",
         payload: data.payload || "",
         type: data.type,
         default: data.default,
         downloaded: 0,
         cdn: data.cdn,
         cdnName: data.cdnName || "",
-        cdnNumber: data.cdn ? 1 : 0,
+        cdnNumber: 0,
         notes: data.notes,
         noteMsg: data.noteMsg || "",
         testPriority: typeof data.testPriority === 'string' ? parseInt(data.testPriority, 10) : data.testPriority,
@@ -87,10 +88,18 @@ export default function Configs() {
         forpremium: data.forpremium
       };
       setConfigs([...configs, newConfig]);
-      toast.success(`Configuration ${data.name} added successfully`);
+      toast.success(`Config ${data.name} added successfully`);
     }
     setSelectedConfig(undefined);
     setDialogOpen(false);
+  };
+
+  // Component override para o campo host quando multiproxy está habilitado
+  const hostInputOverride = (multiproxy: boolean, value: string, onChange: (value: string) => void) => {
+    if (multiproxy) {
+      return <HostListEditor value={value} onChange={onChange} />;
+    }
+    return null; // Retorna null para usar o input padrão
   };
 
   return (
@@ -102,14 +111,14 @@ export default function Configs() {
           setDialogOpen(true);
         }}>
           <PlusCircle className="mr-2 h-4 w-4" />
-          Add Config
+          Add Configuration
         </Button>
       </div>
       
       <div className="flex items-center border rounded-md pl-3 max-w-md bg-muted/30">
         <Search className="h-4 w-4 text-muted-foreground" />
         <Input 
-          placeholder="Search by name, operator or host..." 
+          placeholder="Search by name, host or type..." 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -127,6 +136,7 @@ export default function Configs() {
         onOpenChange={setDialogOpen}
         config={selectedConfig}
         onSubmit={handleFormSubmit}
+        hostInputOverride={hostInputOverride}
       />
       
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

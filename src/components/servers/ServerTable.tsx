@@ -16,9 +16,14 @@ import {
   DropdownMenuLabel, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Server } from "@/types/types";
-import { Edit, MoreHorizontal, Shield, Trash2 } from "lucide-react";
+import { Edit, MoreHorizontal, Shield, Trash2, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ServerTableProps {
@@ -57,6 +62,15 @@ export default function ServerTable({ servers, onEdit, onDelete }: ServerTablePr
     }
     return 0;
   });
+
+  // Helper function to count total CDNs
+  const countCDNs = (server: Server) => {
+    return (
+      (server.cdns.cloudflare?.length || 0) +
+      (server.cdns.googlecloud?.length || 0) +
+      (server.cdns.cloudfront?.length || 0)
+    );
+  };
 
   return (
     <div className="rounded-md border border-border overflow-hidden">
@@ -144,9 +158,59 @@ export default function ServerTable({ servers, onEdit, onDelete }: ServerTablePr
               </TableCell>
               <TableCell>
                 {server.cdn ? (
-                  <Badge variant="secondary" className="bg-blue-500/10 text-blue-400 border-blue-500/20">
-                    {server.cdnName || "Enabled"}
-                  </Badge>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="secondary" size="sm" className="h-8 bg-blue-500/10 text-blue-400 border-blue-500/20">
+                        <span className="mr-1">{server.cdnName || "CDNs"}</span>
+                        <Badge variant="outline" className="ml-1 px-1.5 py-0 h-5">
+                          {countCDNs(server)}
+                        </Badge>
+                        <ChevronDown className="ml-1 h-3 w-3" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-60 p-2" align="start">
+                      <div className="space-y-2">
+                        <h4 className="font-medium text-sm">CDN Providers</h4>
+                        
+                        {server.cdns.cloudflare && server.cdns.cloudflare.length > 0 && (
+                          <div className="space-y-1">
+                            <h5 className="text-xs font-medium text-muted-foreground">Cloudflare</h5>
+                            <div className="space-y-1">
+                              {server.cdns.cloudflare.map((cdn, i) => (
+                                <div key={i} className="text-xs px-2 py-1 bg-muted/30 rounded">{cdn}</div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {server.cdns.googlecloud && server.cdns.googlecloud.length > 0 && (
+                          <div className="space-y-1">
+                            <h5 className="text-xs font-medium text-muted-foreground">Google Cloud</h5>
+                            <div className="space-y-1">
+                              {server.cdns.googlecloud.map((cdn, i) => (
+                                <div key={i} className="text-xs px-2 py-1 bg-muted/30 rounded">{cdn}</div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {server.cdns.cloudfront && server.cdns.cloudfront.length > 0 && (
+                          <div className="space-y-1">
+                            <h5 className="text-xs font-medium text-muted-foreground">CloudFront</h5>
+                            <div className="space-y-1">
+                              {server.cdns.cloudfront.map((cdn, i) => (
+                                <div key={i} className="text-xs px-2 py-1 bg-muted/30 rounded">{cdn}</div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {countCDNs(server) === 0 && (
+                          <div className="text-xs text-muted-foreground p-2">No CDN entries found</div>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 ) : (
                   <Badge variant="outline" className="text-muted-foreground">None</Badge>
                 )}

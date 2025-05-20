@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -21,16 +22,16 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { PremiumUser, UserFormValues } from "@/types/types";
+import { UserFormValues } from "@/types/types";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, RefreshCcw } from "lucide-react";
 
 interface UserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  user?: PremiumUser;
+  user?: any;
   onSubmit: (data: UserFormValues) => void;
 }
 
@@ -106,6 +107,26 @@ export default function UserDialog({ open, onOpenChange, user, onSubmit }: UserD
     onSubmit(values);
     onOpenChange(false);
   };
+  
+  // Generate a random transaction ID (simulated)
+  const generateTransactionId = () => {
+    const randomHex = () => Math.floor(Math.random() * 16).toString(16);
+    let txid = 'tx_';
+    for (let i = 0; i < 24; i++) {
+      txid += randomHex();
+    }
+    form.setValue('txid', txid);
+  };
+  
+  // Generate a random E2 ID (simulated)
+  const generateE2Id = () => {
+    const randomDigits = () => Math.floor(Math.random() * 10).toString();
+    let e2id = '';
+    for (let i = 0; i < 10; i++) {
+      e2id += randomDigits();
+    }
+    form.setValue('e2id', e2id);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -137,9 +158,20 @@ export default function UserDialog({ open, onOpenChange, user, onSubmit }: UserD
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Transaction ID</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Transaction ID" {...field} />
-                    </FormControl>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <Input placeholder="Transaction ID" {...field} />
+                      </FormControl>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        onClick={generateTransactionId}
+                        title="Generate Transaction ID"
+                      >
+                        <RefreshCcw className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -151,9 +183,20 @@ export default function UserDialog({ open, onOpenChange, user, onSubmit }: UserD
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>E2 ID</FormLabel>
-                    <FormControl>
-                      <Input placeholder="E2 ID" {...field} />
-                    </FormControl>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <Input placeholder="E2 ID" {...field} />
+                      </FormControl>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        onClick={generateE2Id}
+                        title="Generate E2 ID"
+                      >
+                        <RefreshCcw className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}

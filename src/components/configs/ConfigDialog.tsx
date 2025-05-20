@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -19,6 +20,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import {
   Select,
@@ -35,6 +37,7 @@ interface ConfigDialogProps {
   onOpenChange: (open: boolean) => void;
   config?: Config;
   onSubmit: (data: ConfigFormValues) => void;
+  hostInputOverride?: (multiproxy: boolean, value: string, onChange: (value: string) => void) => React.ReactNode | null;
 }
 
 const configFormSchema = z.object({
@@ -52,34 +55,37 @@ const configFormSchema = z.object({
   testPriority: z.string()
     .transform((val) => parseInt(val, 10))
     .refine((val) => !isNaN(val) && val >= 0, {
-      message: "Priority must be a non-negative number",
+      message: "Priority must be a positive number",
     }),
   operator: z.string().min(1, "Operator is required"),
   multiproxy: z.boolean().default(false),
   forpremium: z.boolean().default(false),
 });
 
-export default function ConfigDialog({ open, onOpenChange, config, onSubmit }: ConfigDialogProps) {
+export default function ConfigDialog({ open, onOpenChange, config, onSubmit, hostInputOverride }: ConfigDialogProps) {
   const form = useForm<ConfigFormValues>({
     resolver: zodResolver(configFormSchema),
     defaultValues: {
       name: "",
       host: "",
       dnsHost: "",
-      sni: "same",
+      sni: "",
       payload: "",
-      type: "tls",
+      type: "ssh",
       default: false,
       cdn: false,
       cdnName: "",
       notes: false,
       noteMsg: "",
-      testPriority: "1",
-      operator: "",
+      testPriority: "0",
+      operator: "vpnapp",
       multiproxy: false,
       forpremium: false,
     },
   });
+
+  // Get the current multiproxy value from form
+  const multiproxyEnabled = form.watch("multiproxy");
 
   useEffect(() => {
     if (config) {
@@ -105,16 +111,16 @@ export default function ConfigDialog({ open, onOpenChange, config, onSubmit }: C
         name: "",
         host: "",
         dnsHost: "",
-        sni: "same",
+        sni: "",
         payload: "",
-        type: "tls",
+        type: "ssh",
         default: false,
         cdn: false,
         cdnName: "",
         notes: false,
         noteMsg: "",
-        testPriority: "1",
-        operator: "",
+        testPriority: "0",
+        operator: "vpnapp",
         multiproxy: false,
         forpremium: false,
       });
@@ -135,65 +141,19 @@ export default function ConfigDialog({ open, onOpenChange, config, onSubmit }: C
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Configuration Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. INTERNET OPTIMIZER" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="operator"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Operator Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. UNIVERSAL BYPASS" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="host"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Host</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. 141.193.213.11" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="dnsHost"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>DNS Host (optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. 8.8.8.8" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. SSH Direct" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
@@ -201,162 +161,25 @@ export default function ConfigDialog({ open, onOpenChange, config, onSubmit }: C
                 name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Connection Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormLabel>Type</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                      value={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select connection type" />
+                          <SelectValue placeholder="Select type" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="tls">TLS</SelectItem>
-                        <SelectItem value="http">HTTP</SelectItem>
-                        <SelectItem value="ws">WebSocket</SelectItem>
-                        <SelectItem value="grpc">gRPC</SelectItem>
+                        <SelectItem value="ssh">SSH</SelectItem>
+                        <SelectItem value="vmess">VMESS</SelectItem>
+                        <SelectItem value="v2ray">V2RAY</SelectItem>
+                        <SelectItem value="trojan">TROJAN</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="sni"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>SNI</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select SNI type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="same">Same as Host</SelectItem>
-                        <SelectItem value="custom">Custom</SelectItem>
-                        <SelectItem value="empty">Empty</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <FormField
-              control={form.control}
-              name="payload"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Payload (optional)</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="HTTP payload content..."
-                      className="h-20" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox 
-                        checked={field.value} 
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="font-normal">Show Notes</FormLabel>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="multiproxy"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox 
-                        checked={field.value} 
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="font-normal">Multi Proxy</FormLabel>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="forpremium"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox 
-                        checked={field.value} 
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="font-normal">Premium Users Only</FormLabel>
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            {form.watch("notes") && (
-              <FormField
-                control={form.control}
-                name="noteMsg"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Note Message</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Note message to display" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="default"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox 
-                        checked={field.value} 
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="font-normal">Default Config</FormLabel>
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="cdn"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox 
-                        checked={field.value} 
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="font-normal">CDN Enabled</FormLabel>
                   </FormItem>
                 )}
               />
@@ -376,6 +199,165 @@ export default function ConfigDialog({ open, onOpenChange, config, onSubmit }: C
               />
             </div>
             
+            <FormField
+              control={form.control}
+              name="multiproxy"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox 
+                      checked={field.value} 
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel className="font-normal">Multi-proxy Support</FormLabel>
+                    <FormDescription>
+                      Enable for multiple host addresses separated by semicolons
+                    </FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="host"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Host{multiproxyEnabled ? 's' : ''}</FormLabel>
+                  <FormControl>
+                    {hostInputOverride && multiproxyEnabled 
+                      ? hostInputOverride(multiproxyEnabled, field.value, field.onChange)
+                      : <Input placeholder="e.g. 127.0.0.1:22" {...field} />
+                    }
+                  </FormControl>
+                  {multiproxyEnabled && (
+                    <FormDescription>
+                      Multiple hosts can be added and managed with the editor
+                    </FormDescription>
+                  )}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="dnsHost"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>DNS Host (optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. dns.example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="sni"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>SNI (optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="payload"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Payload (optional)</FormLabel>
+                  <FormControl>
+                    <Textarea 
+                      placeholder="Enter payload content here..." 
+                      className="min-h-[100px]" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="operator"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Operator</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. vpnapp" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="space-y-3">
+                <FormField
+                  control={form.control}
+                  name="default"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox 
+                          checked={field.value} 
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel className="font-normal">Default Configuration</FormLabel>
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="forpremium"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox 
+                          checked={field.value} 
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormLabel className="font-normal">Premium Users Only</FormLabel>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+            
+            <hr className="border-border" />
+            
+            <FormField
+              control={form.control}
+              name="cdn"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox 
+                      checked={field.value} 
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel className="font-normal">CDN Enabled</FormLabel>
+                </FormItem>
+              )}
+            />
+            
             {form.watch("cdn") && (
               <FormField
                 control={form.control}
@@ -383,18 +365,47 @@ export default function ConfigDialog({ open, onOpenChange, config, onSubmit }: C
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>CDN Provider</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select CDN provider" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="cloudflare">Cloudflare</SelectItem>
-                        <SelectItem value="cloudfront">CloudFront</SelectItem>
-                        <SelectItem value="googlecloud">Google Cloud</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input placeholder="e.g. cloudflare, cloudfront" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+            
+            <hr className="border-border" />
+            
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox 
+                      checked={field.value} 
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel className="font-normal">Add Notes</FormLabel>
+                </FormItem>
+              )}
+            />
+            
+            {form.watch("notes") && (
+              <FormField
+                control={form.control}
+                name="noteMsg"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Note Message</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Note information for users..." 
+                        className="min-h-[80px]" 
+                        {...field} 
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
