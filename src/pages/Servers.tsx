@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,11 +12,35 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import ServerTable from "@/components/servers/ServerTable";
-import ServerDialog, { ServerFormValues } from "@/components/servers/ServerDialog";
+import ServerDialog from "@/components/servers/ServerDialog";
 import { Server } from "@/types/types";
 import { servers as mockServers } from "@/lib/mock";
 import { PlusCircle, Search } from "lucide-react";
 import { toast } from "sonner";
+
+// Define ServerFormValues here to avoid import issues
+interface ServerFormValues {
+  cloudFlareDomain: string;
+  dnsttDomain?: string;
+  country: string;
+  city: string;
+  state: string;
+  ipv4: string;
+  ipv6?: string;
+  portHTTP?: string;
+  portTLS?: string;
+  portUDP?: string;
+  portDNSTT?: string;
+  premium: boolean;
+  invisible: boolean;
+  tls: boolean;
+  quic: boolean;
+  http: boolean;
+  dnstt: boolean;
+  cdn: boolean;
+  cdnName?: string;
+  capacity: string | number;
+}
 
 export default function Servers() {
   const [servers, setServers] = useState<Server[]>(mockServers);

@@ -13,11 +13,25 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import UserTable from "@/components/users/UserTable";
-import UserDialog, { UserFormValues } from "@/components/users/UserDialog";
+import UserDialog from "@/components/users/UserDialog";
 import { PremiumUser } from "@/types/types";
 import { premiumUsers as mockUsers } from "@/lib/mock";
 import { PlusCircle, Search } from "lucide-react";
 import { toast } from "sonner";
+
+// Define UserFormValues here to avoid import issues
+interface UserFormValues {
+  e2id: string;
+  txid: string;
+  date: Date;
+  dateEnd: Date;
+  pricePayed: string;
+  months: string | number;
+  emaiL: string;
+  suspicious: boolean;
+  used: boolean;
+  expired: boolean;
+}
 
 export default function Users() {
   const [users, setUsers] = useState<PremiumUser[]>(mockUsers);

@@ -1,10 +1,7 @@
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useState, useEffect } from "react";
 import { z } from "zod";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -15,21 +12,18 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Server, ServerFormValues } from "@/types/types";
+import { Server } from "@/types/types";
 
-interface ServerDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  server?: Server;
-  onSubmit: (data: ServerFormValues) => void;
-}
-
+// Form schema
 const serverFormSchema = z.object({
   cloudFlareDomain: z.string().min(1, "Domain is required"),
   dnsttDomain: z.string().optional(),
@@ -44,20 +38,32 @@ const serverFormSchema = z.object({
   portDNSTT: z.string().optional(),
   premium: z.boolean().default(false),
   invisible: z.boolean().default(false),
-  tls: z.boolean().default(false),
+  tls: z.boolean().default(true),
   quic: z.boolean().default(false),
-  http: z.boolean().default(false),
+  http: z.boolean().default(true),
   dnstt: z.boolean().default(false),
   cdn: z.boolean().default(false),
   cdnName: z.string().optional(),
-  capacity: z.string()
-    .transform((val) => parseInt(val, 10))
-    .refine((val) => !isNaN(val) && val > 0, {
-      message: "Capacity must be a positive number",
-    }),
+  capacity: z.union([z.string(), z.number()]).transform(val => 
+    typeof val === 'string' ? parseInt(val, 10) : val
+  ),
 });
 
-export default function ServerDialog({ open, onOpenChange, server, onSubmit }: ServerDialogProps) {
+export type ServerFormValues = z.infer<typeof serverFormSchema>;
+
+interface ServerDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  server?: Server;
+  onSubmit: (data: ServerFormValues) => void;
+}
+
+export default function ServerDialog({ 
+  open, 
+  onOpenChange, 
+  server, 
+  onSubmit 
+}: ServerDialogProps) {
   const form = useForm<ServerFormValues>({
     resolver: zodResolver(serverFormSchema),
     defaultValues: {
@@ -74,76 +80,80 @@ export default function ServerDialog({ open, onOpenChange, server, onSubmit }: S
       portDNSTT: "53",
       premium: false,
       invisible: false,
-      tls: false,
+      tls: true,
       quic: false,
-      http: false,
+      http: true,
       dnstt: false,
       cdn: false,
       cdnName: "",
-      capacity: "100",
+      capacity: 100,
     },
   });
 
+  // Reset form when server changes
   useEffect(() => {
-    if (server) {
-      form.reset({
-        cloudFlareDomain: server.cloudFlareDomain,
-        dnsttDomain: server.dnsttDomain,
-        country: server.country,
-        city: server.city,
-        state: server.state,
-        ipv4: server.ipv4,
-        ipv6: server.ipv6 || "",
-        portHTTP: server.portHTTP,
-        portTLS: server.portTLS,
-        portUDP: server.portUDP,
-        portDNSTT: server.portDNSTT,
-        premium: server.premium,
-        invisible: server.invisible,
-        tls: server.tls,
-        quic: server.quic,
-        http: server.http,
-        dnstt: server.dnstt,
-        cdn: server.cdn,
-        cdnName: server.cdnName || "",
-        capacity: server.capacity.toString(),
-      });
-    } else {
-      form.reset({
-        cloudFlareDomain: "",
-        dnsttDomain: "",
-        country: "",
-        city: "",
-        state: "",
-        ipv4: "",
-        ipv6: "",
-        portHTTP: "80",
-        portTLS: "443",
-        portUDP: "0",
-        portDNSTT: "53",
-        premium: false,
-        invisible: false,
-        tls: false,
-        quic: false,
-        http: false,
-        dnstt: false,
-        cdn: false,
-        cdnName: "",
-        capacity: "100",
-      });
+    if (open) {
+      if (server) {
+        form.reset({
+          cloudFlareDomain: server.cloudFlareDomain,
+          dnsttDomain: server.dnsttDomain,
+          country: server.country,
+          city: server.city,
+          state: server.state,
+          ipv4: server.ipv4,
+          ipv6: server.ipv6,
+          portHTTP: server.portHTTP,
+          portTLS: server.portTLS,
+          portUDP: server.portUDP,
+          portDNSTT: server.portDNSTT,
+          premium: server.premium,
+          invisible: server.invisible,
+          tls: server.tls,
+          quic: server.quic,
+          http: server.http,
+          dnstt: server.dnstt,
+          cdn: server.cdn,
+          cdnName: server.cdnName,
+          capacity: server.capacity,
+        });
+      } else {
+        form.reset({
+          cloudFlareDomain: "",
+          dnsttDomain: "",
+          country: "",
+          city: "",
+          state: "",
+          ipv4: "",
+          ipv6: "",
+          portHTTP: "80",
+          portTLS: "443",
+          portUDP: "0",
+          portDNSTT: "53",
+          premium: false,
+          invisible: false,
+          tls: true,
+          quic: false,
+          http: true,
+          dnstt: false,
+          cdn: false,
+          cdnName: "",
+          capacity: 100,
+        });
+      }
     }
-  }, [server, form]);
+  }, [form, server, open]);
 
-  const handleSubmit = (values: ServerFormValues) => {
-    onSubmit(values);
-    onOpenChange(false);
+  const handleSubmit = (data: ServerFormValues) => {
+    onSubmit(data);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{server ? "Edit Server" : "Add New Server"}</DialogTitle>
+          <DialogTitle>
+            {server ? "Edit Server" : "Add New Server"}
+          </DialogTitle>
         </DialogHeader>
         
         <Form {...form}>
@@ -151,12 +161,40 @@ export default function ServerDialog({ open, onOpenChange, server, onSubmit }: S
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
+                name="cloudFlareDomain"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CloudFlare Domain</FormLabel>
+                    <FormControl>
+                      <Input placeholder="example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="dnsttDomain"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>DNSTT Domain (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="dnstt.example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
                 name="country"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Country</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. US, BR, JP" {...field} />
+                      <Input placeholder="United States" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -170,7 +208,7 @@ export default function ServerDialog({ open, onOpenChange, server, onSubmit }: S
                   <FormItem>
                     <FormLabel>City</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. New York, São Paulo" {...field} />
+                      <Input placeholder="New York" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -184,7 +222,7 @@ export default function ServerDialog({ open, onOpenChange, server, onSubmit }: S
                   <FormItem>
                     <FormLabel>State</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. NY, SP" {...field} />
+                      <Input placeholder="NY" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -198,7 +236,7 @@ export default function ServerDialog({ open, onOpenChange, server, onSubmit }: S
                   <FormItem>
                     <FormLabel>IPv4 Address</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. 123.45.67.89" {...field} />
+                      <Input placeholder="192.168.1.1" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -210,9 +248,9 @@ export default function ServerDialog({ open, onOpenChange, server, onSubmit }: S
                 name="ipv6"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>IPv6 Address (optional)</FormLabel>
+                    <FormLabel>IPv6 Address (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. 2001:db8::1" {...field} />
+                      <Input placeholder="2001:db8::1" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -224,40 +262,18 @@ export default function ServerDialog({ open, onOpenChange, server, onSubmit }: S
                 name="capacity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Capacity (max users)</FormLabel>
+                    <FormLabel>Capacity</FormLabel>
                     <FormControl>
-                      <Input type="number" min="1" {...field} />
+                      <Input 
+                        type="number" 
+                        placeholder="100" 
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value)}
+                      />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="cloudFlareDomain"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CloudFlare Domain</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. server.domain.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="dnsttDomain"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>DNSTT Domain (optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. dns.domain.com" {...field} />
-                    </FormControl>
+                    <FormDescription>
+                      Maximum number of concurrent users
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -272,8 +288,9 @@ export default function ServerDialog({ open, onOpenChange, server, onSubmit }: S
                   <FormItem>
                     <FormLabel>HTTP Port</FormLabel>
                     <FormControl>
-                      <Input type="text" {...field} />
+                      <Input placeholder="80" {...field} />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -285,8 +302,9 @@ export default function ServerDialog({ open, onOpenChange, server, onSubmit }: S
                   <FormItem>
                     <FormLabel>TLS Port</FormLabel>
                     <FormControl>
-                      <Input type="text" {...field} />
+                      <Input placeholder="443" {...field} />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -298,8 +316,9 @@ export default function ServerDialog({ open, onOpenChange, server, onSubmit }: S
                   <FormItem>
                     <FormLabel>UDP Port</FormLabel>
                     <FormControl>
-                      <Input type="text" {...field} />
+                      <Input placeholder="0" {...field} />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -311,8 +330,9 @@ export default function ServerDialog({ open, onOpenChange, server, onSubmit }: S
                   <FormItem>
                     <FormLabel>DNSTT Port</FormLabel>
                     <FormControl>
-                      <Input type="text" {...field} />
+                      <Input placeholder="53" {...field} />
                     </FormControl>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -323,14 +343,19 @@ export default function ServerDialog({ open, onOpenChange, server, onSubmit }: S
                 control={form.control}
                 name="http"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                     <FormControl>
-                      <Checkbox 
-                        checked={field.value} 
+                      <Checkbox
+                        checked={field.value}
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <FormLabel className="font-normal">HTTP</FormLabel>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>HTTP</FormLabel>
+                      <FormDescription>
+                        Enable HTTP protocol
+                      </FormDescription>
+                    </div>
                   </FormItem>
                 )}
               />
@@ -339,14 +364,19 @@ export default function ServerDialog({ open, onOpenChange, server, onSubmit }: S
                 control={form.control}
                 name="tls"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                     <FormControl>
-                      <Checkbox 
-                        checked={field.value} 
+                      <Checkbox
+                        checked={field.value}
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <FormLabel className="font-normal">TLS</FormLabel>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>TLS</FormLabel>
+                      <FormDescription>
+                        Enable TLS protocol
+                      </FormDescription>
+                    </div>
                   </FormItem>
                 )}
               />
@@ -355,14 +385,19 @@ export default function ServerDialog({ open, onOpenChange, server, onSubmit }: S
                 control={form.control}
                 name="quic"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                     <FormControl>
-                      <Checkbox 
-                        checked={field.value} 
+                      <Checkbox
+                        checked={field.value}
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <FormLabel className="font-normal">QUIC</FormLabel>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>QUIC</FormLabel>
+                      <FormDescription>
+                        Enable QUIC protocol
+                      </FormDescription>
+                    </div>
                   </FormItem>
                 )}
               />
@@ -371,14 +406,19 @@ export default function ServerDialog({ open, onOpenChange, server, onSubmit }: S
                 control={form.control}
                 name="dnstt"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                     <FormControl>
-                      <Checkbox 
-                        checked={field.value} 
+                      <Checkbox
+                        checked={field.value}
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <FormLabel className="font-normal">DNSTT</FormLabel>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>DNSTT</FormLabel>
+                      <FormDescription>
+                        Enable DNSTT protocol
+                      </FormDescription>
+                    </div>
                   </FormItem>
                 )}
               />
@@ -389,14 +429,19 @@ export default function ServerDialog({ open, onOpenChange, server, onSubmit }: S
                 control={form.control}
                 name="premium"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                     <FormControl>
-                      <Checkbox 
-                        checked={field.value} 
+                      <Checkbox
+                        checked={field.value}
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <FormLabel className="font-normal">Premium Server</FormLabel>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Premium</FormLabel>
+                      <FormDescription>
+                        Server for premium users only
+                      </FormDescription>
+                    </div>
                   </FormItem>
                 )}
               />
@@ -405,14 +450,19 @@ export default function ServerDialog({ open, onOpenChange, server, onSubmit }: S
                 control={form.control}
                 name="invisible"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                     <FormControl>
-                      <Checkbox 
-                        checked={field.value} 
+                      <Checkbox
+                        checked={field.value}
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <FormLabel className="font-normal">Hidden Server</FormLabel>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Invisible</FormLabel>
+                      <FormDescription>
+                        Hide server from server list
+                      </FormDescription>
+                    </div>
                   </FormItem>
                 )}
               />
@@ -421,14 +471,19 @@ export default function ServerDialog({ open, onOpenChange, server, onSubmit }: S
                 control={form.control}
                 name="cdn"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                     <FormControl>
-                      <Checkbox 
-                        checked={field.value} 
+                      <Checkbox
+                        checked={field.value}
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>
-                    <FormLabel className="font-normal">CDN Enabled</FormLabel>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>CDN</FormLabel>
+                      <FormDescription>
+                        Server uses CDN
+                      </FormDescription>
+                    </div>
                   </FormItem>
                 )}
               />
@@ -442,7 +497,7 @@ export default function ServerDialog({ open, onOpenChange, server, onSubmit }: S
                   <FormItem>
                     <FormLabel>CDN Provider</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. cloudflare, cloudfront" {...field} />
+                      <Input placeholder="Cloudflare" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -1,7 +1,7 @@
+
 import { ReactNode, useState } from "react";
 import { Header } from "./Header";
-import { Sidebar } from "./Sidebar";
-import { ThemeToggle } from "./ThemeToggle";
+import Sidebar from "./Sidebar";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -18,7 +18,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <Header onMenuClick={toggleSidebar} />
         <main className="flex-grow p-6">{children}</main>
       </div>
-      
     </div>
   );
 }

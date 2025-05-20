@@ -6,11 +6,12 @@ import { ChevronLeft, ChevronRight, LayoutDashboard, Server, Settings, Shield, U
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
-  collapsed: boolean;
-  toggleCollapsed: () => void;
+  open: boolean;
 }
 
-export default function Sidebar({ collapsed, toggleCollapsed }: SidebarProps) {
+export default function Sidebar({ open }: SidebarProps) {
+  const collapsed = !open;
+  
   return (
     <div 
       className={cn(
@@ -22,14 +23,6 @@ export default function Sidebar({ collapsed, toggleCollapsed }: SidebarProps) {
         {!collapsed && (
           <span className="text-lg font-bold gradient-heading">DockSocks VPN</span>
         )}
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={toggleCollapsed}
-          className={cn("ml-auto", collapsed && "mx-auto")}
-        >
-          {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-        </Button>
       </div>
       
       <ScrollArea className="flex-1">
