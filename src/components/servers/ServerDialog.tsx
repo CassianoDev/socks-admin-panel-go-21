@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -57,11 +56,7 @@ const serverFormSchema = z.object({
   capacity: z.union([z.string(), z.number()]).transform(val => 
     typeof val === 'string' ? parseInt(val, 10) : val
   ),
-  cdns: z.object({
-    cloudflare: z.array(z.string()).optional().default([]),
-    googlecloud: z.array(z.string()).optional().default([]),
-    cloudfront: z.array(z.string()).optional().default([])
-  }).optional().default({
+  cdns: z.record(z.array(z.string()).default([])).optional().default({
     cloudflare: [],
     googlecloud: [],
     cloudfront: []
@@ -113,7 +108,9 @@ export default function ServerDialog({
   });
 
   const [activeTab, setActiveTab] = useState("cloudflare");
-  const [cdnDomains, setCdnDomains] = useState({
+  const [customProviders, setCustomProviders] = useState<string[]>([]);
+  const [customProviderInput, setCustomProviderInput] = useState("");
+  const [cdnDomains, setCdnDomains] = useState<Record<string, string[]>>({
     cloudflare: [""],
     googlecloud: [""],
     cloudfront: [""]
@@ -151,12 +148,26 @@ export default function ServerDialog({
           }
         });
         
-        // Update local state for CDN domains
-        setCdnDomains({
+        // Initialize custom providers from server data
+        const defaultProviders = ["cloudflare", "googlecloud", "cloudfront"];
+        const serverCdnKeys = server.cdns ? Object.keys(server.cdns) : [];
+        const customCdnKeys = serverCdnKeys.filter(key => !defaultProviders.includes(key));
+        
+        setCustomProviders(customCdnKeys);
+        
+        // Update local state for CDN domains including custom providers
+        const domainsState: Record<string, string[]> = {
           cloudflare: server.cdns?.cloudflare?.length ? server.cdns.cloudflare : [""],
           googlecloud: server.cdns?.googlecloud?.length ? server.cdns.googlecloud : [""],
           cloudfront: server.cdns?.cloudfront?.length ? server.cdns.cloudfront : [""],
+        };
+        
+        // Add custom CDN providers domains
+        customCdnKeys.forEach(key => {
+          domainsState[key] = server.cdns?.[key]?.length ? server.cdns[key] : [""];
         });
+        
+        setCdnDomains(domainsState);
       } else {
         form.reset({
           cloudFlareDomain: "",
@@ -186,6 +197,10 @@ export default function ServerDialog({
           }
         });
         
+        // Reset custom providers
+        setCustomProviders([]);
+        setCustomProviderInput("");
+        
         // Reset local state for CDN domains
         setCdnDomains({
           cloudflare: [""],
@@ -196,17 +211,17 @@ export default function ServerDialog({
     }
   }, [form, server, open]);
 
-  // Add a domain input to the current CDN tab
-  const addDomainField = (cdnType: 'cloudflare' | 'googlecloud' | 'cloudfront') => {
+  // Add a domain input to the specified CDN provider
+  const addDomainField = (cdnType: string) => {
     setCdnDomains(prev => ({
       ...prev,
-      [cdnType]: [...prev[cdnType], ""]
+      [cdnType]: [...(prev[cdnType] || []), ""]
     }));
   };
 
-  // Remove a domain input from the current CDN tab
-  const removeDomainField = (cdnType: 'cloudflare' | 'googlecloud' | 'cloudfront', index: number) => {
-    if (cdnDomains[cdnType].length > 1) {
+  // Remove a domain input from the specified CDN provider
+  const removeDomainField = (cdnType: string, index: number) => {
+    if (cdnDomains[cdnType] && cdnDomains[cdnType].length > 1) {
       setCdnDomains(prev => ({
         ...prev,
         [cdnType]: prev[cdnType].filter((_, i) => i !== index)
@@ -215,40 +230,84 @@ export default function ServerDialog({
   };
 
   // Update domain value in the local state and form
-  const updateDomain = (cdnType: 'cloudflare' | 'googlecloud' | 'cloudfront', index: number, value: string) => {
+  const updateDomain = (cdnType: string, index: number, value: string) => {
     // Update local state
     setCdnDomains(prev => {
-      const newDomains = [...prev[cdnType]];
+      const newDomains = [...(prev[cdnType] || [])];
       newDomains[index] = value;
       return { ...prev, [cdnType]: newDomains };
     });
     
     // Update form state with filtered domains (remove empty ones)
-    const updatedDomains = {
-      ...cdnDomains,
-      [cdnType]: [
-        ...cdnDomains[cdnType].slice(0, index),
+    setTimeout(() => {
+      const updatedDomains = { ...cdnDomains };
+      if (!updatedDomains[cdnType]) {
+        updatedDomains[cdnType] = [];
+      }
+      
+      updatedDomains[cdnType] = [
+        ...(updatedDomains[cdnType].slice(0, index) || []),
         value,
-        ...cdnDomains[cdnType].slice(index + 1)
-      ]
-    };
+        ...(updatedDomains[cdnType].slice(index + 1) || [])
+      ];
+      
+      // Filter out empty domains for each provider
+      const filteredDomains: Record<string, string[]> = {};
+      Object.keys(updatedDomains).forEach(key => {
+        filteredDomains[key] = updatedDomains[key].filter(d => d.trim() !== "");
+      });
+      
+      form.setValue('cdns', filteredDomains);
+    }, 0);
+  };
+
+  // Handle adding a new custom CDN provider
+  const handleAddCustomProvider = () => {
+    if (customProviderInput.trim() && !customProviders.includes(customProviderInput.trim().toLowerCase())) {
+      const newProvider = customProviderInput.trim().toLowerCase();
+      setCustomProviders([...customProviders, newProvider]);
+      setCdnDomains(prev => ({
+        ...prev,
+        [newProvider]: [""]
+      }));
+      setCustomProviderInput("");
+      setActiveTab(newProvider);
+    }
+  };
+
+  // Handle removing a custom CDN provider
+  const handleRemoveCustomProvider = (provider: string) => {
+    setCustomProviders(customProviders.filter(p => p !== provider));
+    setCdnDomains(prev => {
+      const newDomains = { ...prev };
+      delete newDomains[provider];
+      return newDomains;
+    });
     
-    const filteredDomains = {
-      cloudflare: updatedDomains.cloudflare.filter(d => d.trim() !== ""),
-      googlecloud: updatedDomains.googlecloud.filter(d => d.trim() !== ""),
-      cloudfront: updatedDomains.cloudfront.filter(d => d.trim() !== "")
-    };
+    // Update form state to remove the custom provider
+    const updatedCdns = { ...form.getValues('cdns') };
+    delete updatedCdns[provider];
+    form.setValue('cdns', updatedCdns);
     
-    form.setValue('cdns', filteredDomains);
+    // Set active tab to a default one if the removed provider was active
+    if (activeTab === provider) {
+      setActiveTab('cloudflare');
+    }
   };
 
   const handleSubmit = (data: ServerFormValues) => {
     // Filter out empty domains before submitting
-    const filteredCdns = {
-      cloudflare: cdnDomains.cloudflare.filter(d => d.trim() !== ""),
-      googlecloud: cdnDomains.googlecloud.filter(d => d.trim() !== ""),
-      cloudfront: cdnDomains.cloudfront.filter(d => d.trim() !== "")
-    };
+    const filteredCdns: Record<string, string[]> = {};
+    
+    // Filter default providers
+    ['cloudflare', 'googlecloud', 'cloudfront'].forEach(provider => {
+      filteredCdns[provider] = cdnDomains[provider]?.filter(d => d.trim() !== "") || [];
+    });
+    
+    // Filter custom providers
+    customProviders.forEach(provider => {
+      filteredCdns[provider] = cdnDomains[provider]?.filter(d => d.trim() !== "") || [];
+    });
     
     const finalData = {
       ...data,
@@ -602,6 +661,24 @@ export default function ServerDialog({
             
             {form.watch("cdn") && (
               <div className="space-y-4">
+                {/* Add custom CDN provider input */}
+                <div className="flex items-center space-x-2 mb-4">
+                  <Input
+                    value={customProviderInput}
+                    onChange={(e) => setCustomProviderInput(e.target.value)}
+                    placeholder="Add custom CDN provider"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleAddCustomProvider}
+                    disabled={!customProviderInput.trim()}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                
                 <FormField
                   control={form.control}
                   name="cdnName"
@@ -645,8 +722,27 @@ export default function ServerDialog({
                       <TabsTrigger value="cloudflare">Cloudflare</TabsTrigger>
                       <TabsTrigger value="googlecloud">Google Cloud</TabsTrigger>
                       <TabsTrigger value="cloudfront">CloudFront</TabsTrigger>
+                      
+                      {/* Custom CDN provider tabs */}
+                      {customProviders.map(provider => (
+                        <div key={provider} className="flex items-center">
+                          <TabsTrigger value={provider} className="capitalize">
+                            {provider}
+                          </TabsTrigger>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => handleRemoveCustomProvider(provider)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
                     </TabsList>
                     
+                    {/* Default CDN provider content */}
                     <TabsContent value="cloudflare" className="space-y-3">
                       {cdnDomains.cloudflare.map((domain, index) => (
                         <div key={`cloudflare-${index}`} className="flex items-center space-x-2">
@@ -742,6 +838,41 @@ export default function ServerDialog({
                         Add CloudFront Domain
                       </Button>
                     </TabsContent>
+                    
+                    {/* Custom CDN provider content */}
+                    {customProviders.map(provider => (
+                      <TabsContent key={provider} value={provider} className="space-y-3">
+                        {cdnDomains[provider]?.map((domain, index) => (
+                          <div key={`${provider}-${index}`} className="flex items-center space-x-2">
+                            <Input
+                              value={domain}
+                              onChange={(e) => updateDomain(provider, index, e.target.value)}
+                              placeholder="cdn.example.com"
+                              className="flex-1"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeDomainField(provider, index)}
+                              disabled={(cdnDomains[provider]?.length || 0) <= 1}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addDomainField(provider)}
+                          className="mt-2"
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add {provider.charAt(0).toUpperCase() + provider.slice(1)} Domain
+                        </Button>
+                      </TabsContent>
+                    ))}
                   </Tabs>
                 </div>
               </div>

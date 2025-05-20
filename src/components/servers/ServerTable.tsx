@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Table, 
@@ -65,11 +64,10 @@ export default function ServerTable({ servers, onEdit, onDelete }: ServerTablePr
 
   // Helper function to count total CDNs
   const countCDNs = (server: Server) => {
-    return (
-      (server.cdns.cloudflare?.length || 0) +
-      (server.cdns.googlecloud?.length || 0) +
-      (server.cdns.cloudfront?.length || 0)
-    );
+    // Count all CDN entries across all providers
+    return Object.values(server.cdns || {}).reduce((total, domains) => {
+      return total + (domains?.length || 0);
+    }, 0);
   };
 
   return (
@@ -172,38 +170,26 @@ export default function ServerTable({ servers, onEdit, onDelete }: ServerTablePr
                       <div className="space-y-2">
                         <h4 className="font-medium text-sm">CDN Providers</h4>
                         
-                        {server.cdns.cloudflare && server.cdns.cloudflare.length > 0 && (
-                          <div className="space-y-1">
-                            <h5 className="text-xs font-medium text-muted-foreground">Cloudflare</h5>
-                            <div className="space-y-1">
-                              {server.cdns.cloudflare.map((cdn, i) => (
-                                <div key={i} className="text-xs px-2 py-1 bg-muted/30 rounded">{cdn}</div>
-                              ))}
+                        {Object.entries(server.cdns || {}).map(([provider, domains]) => (
+                          domains && domains.length > 0 && (
+                            <div key={provider} className="space-y-1">
+                              <h5 className="text-xs font-medium text-muted-foreground capitalize">
+                                {provider === 'cloudflare' 
+                                  ? 'Cloudflare' 
+                                  : provider === 'googlecloud' 
+                                    ? 'Google Cloud' 
+                                    : provider === 'cloudfront' 
+                                      ? 'CloudFront' 
+                                      : provider}
+                              </h5>
+                              <div className="space-y-1">
+                                {domains.map((cdn, i) => (
+                                  <div key={i} className="text-xs px-2 py-1 bg-muted/30 rounded">{cdn}</div>
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        )}
-                        
-                        {server.cdns.googlecloud && server.cdns.googlecloud.length > 0 && (
-                          <div className="space-y-1">
-                            <h5 className="text-xs font-medium text-muted-foreground">Google Cloud</h5>
-                            <div className="space-y-1">
-                              {server.cdns.googlecloud.map((cdn, i) => (
-                                <div key={i} className="text-xs px-2 py-1 bg-muted/30 rounded">{cdn}</div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                        
-                        {server.cdns.cloudfront && server.cdns.cloudfront.length > 0 && (
-                          <div className="space-y-1">
-                            <h5 className="text-xs font-medium text-muted-foreground">CloudFront</h5>
-                            <div className="space-y-1">
-                              {server.cdns.cloudfront.map((cdn, i) => (
-                                <div key={i} className="text-xs px-2 py-1 bg-muted/30 rounded">{cdn}</div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                          )
+                        ))}
                         
                         {countCDNs(server) === 0 && (
                           <div className="text-xs text-muted-foreground p-2">No CDN entries found</div>

@@ -28,11 +28,7 @@ export interface Server {
   cdnNumber: number;
   cdnName: string;
   cdn: boolean;
-  cdns: {
-    cloudflare: string[];
-    googlecloud: string[];
-    cloudfront: string[];
-  };
+  cdns: Record<string, string[]>;
 }
 
 // Formulário para componente ServerDialog
@@ -57,11 +53,7 @@ export interface ServerFormValues {
   cdn?: boolean;
   cdnName?: string;
   capacity: string | number;
-  cdns?: {
-    cloudflare: string[];
-    googlecloud: string[];
-    cloudfront: string[];
-  };
+  cdns?: Record<string, string[]>;
 }
 
 // Config types
