@@ -31,6 +31,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Server, ServerFormValues } from "@/types/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { X, Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 // Form schema
 const serverFormSchema = z.object({
@@ -661,22 +662,53 @@ export default function ServerDialog({
             
             {form.watch("cdn") && (
               <div className="space-y-4">
-                {/* Add custom CDN provider input */}
-                <div className="flex items-center space-x-2 mb-4">
-                  <Input
-                    value={customProviderInput}
-                    onChange={(e) => setCustomProviderInput(e.target.value)}
-                    placeholder="Add custom CDN provider"
-                    className="flex-1"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleAddCustomProvider}
-                    disabled={!customProviderInput.trim()}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
+                {/* Improved custom CDN provider input */}
+                <div className="border rounded-md p-4 bg-background">
+                  <h3 className="text-sm font-medium mb-3">Add Custom CDN Provider</h3>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      value={customProviderInput}
+                      onChange={(e) => setCustomProviderInput(e.target.value)}
+                      placeholder="Enter custom CDN provider name"
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={handleAddCustomProvider}
+                      disabled={!customProviderInput.trim()}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add
+                    </Button>
+                  </div>
+                  
+                  {customProviders.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-xs text-muted-foreground mb-2">Custom providers:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {customProviders.map(provider => (
+                          <Badge 
+                            key={provider} 
+                            variant="outline" 
+                            className="flex items-center gap-1 capitalize py-1 px-2 bg-secondary"
+                          >
+                            {provider}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-4 w-4 ml-1 hover:bg-destructive/20 rounded-full p-0"
+                              onClick={() => handleRemoveCustomProvider(provider)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <FormField
@@ -718,33 +750,38 @@ export default function ServerDialog({
                     onValueChange={setActiveTab}
                     className="w-full"
                   >
-                    <TabsList className="grid grid-cols-3 mb-4">
-                      <TabsTrigger value="cloudflare">Cloudflare</TabsTrigger>
-                      <TabsTrigger value="googlecloud">Google Cloud</TabsTrigger>
-                      <TabsTrigger value="cloudfront">CloudFront</TabsTrigger>
+                    <TabsList className="mb-4 bg-muted flex flex-wrap h-auto p-1">
+                      <TabsTrigger value="cloudflare" className="flex-grow">Cloudflare</TabsTrigger>
+                      <TabsTrigger value="googlecloud" className="flex-grow">Google Cloud</TabsTrigger>
+                      <TabsTrigger value="cloudfront" className="flex-grow">CloudFront</TabsTrigger>
                       
-                      {/* Custom CDN provider tabs */}
+                      {/* Custom CDN provider tabs - redesigned */}
                       {customProviders.map(provider => (
-                        <div key={provider} className="flex items-center">
-                          <TabsTrigger value={provider} className="capitalize">
-                            {provider}
-                          </TabsTrigger>
+                        <TabsTrigger 
+                          key={provider} 
+                          value={provider} 
+                          className="capitalize flex-grow flex items-center justify-between gap-1 px-3"
+                        >
+                          <span>{provider}</span>
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6"
-                            onClick={() => handleRemoveCustomProvider(provider)}
+                            className="h-5 w-5 rounded-full hover:bg-destructive/20 p-0.5"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveCustomProvider(provider);
+                            }}
                           >
                             <X className="h-3 w-3" />
                           </Button>
-                        </div>
+                        </TabsTrigger>
                       ))}
                     </TabsList>
                     
                     {/* Default CDN provider content */}
                     <TabsContent value="cloudflare" className="space-y-3">
-                      {cdnDomains.cloudflare.map((domain, index) => (
+                      {cdnDomains.cloudflare?.map((domain, index) => (
                         <div key={`cloudflare-${index}`} className="flex items-center space-x-2">
                           <Input
                             value={domain}
@@ -757,7 +794,8 @@ export default function ServerDialog({
                             variant="ghost"
                             size="icon"
                             onClick={() => removeDomainField('cloudflare', index)}
-                            disabled={cdnDomains.cloudflare.length === 1}
+                            disabled={cdnDomains.cloudflare?.length === 1}
+                            className="hover:bg-destructive/20"
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -776,7 +814,7 @@ export default function ServerDialog({
                     </TabsContent>
                     
                     <TabsContent value="googlecloud" className="space-y-3">
-                      {cdnDomains.googlecloud.map((domain, index) => (
+                      {cdnDomains.googlecloud?.map((domain, index) => (
                         <div key={`googlecloud-${index}`} className="flex items-center space-x-2">
                           <Input
                             value={domain}
@@ -789,7 +827,8 @@ export default function ServerDialog({
                             variant="ghost"
                             size="icon"
                             onClick={() => removeDomainField('googlecloud', index)}
-                            disabled={cdnDomains.googlecloud.length === 1}
+                            disabled={cdnDomains.googlecloud?.length === 1}
+                            className="hover:bg-destructive/20"
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -808,7 +847,7 @@ export default function ServerDialog({
                     </TabsContent>
                     
                     <TabsContent value="cloudfront" className="space-y-3">
-                      {cdnDomains.cloudfront.map((domain, index) => (
+                      {cdnDomains.cloudfront?.map((domain, index) => (
                         <div key={`cloudfront-${index}`} className="flex items-center space-x-2">
                           <Input
                             value={domain}
@@ -821,7 +860,8 @@ export default function ServerDialog({
                             variant="ghost"
                             size="icon"
                             onClick={() => removeDomainField('cloudfront', index)}
-                            disabled={cdnDomains.cloudfront.length === 1}
+                            disabled={cdnDomains.cloudfront?.length === 1}
+                            className="hover:bg-destructive/20"
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -856,6 +896,7 @@ export default function ServerDialog({
                               size="icon"
                               onClick={() => removeDomainField(provider, index)}
                               disabled={(cdnDomains[provider]?.length || 0) <= 1}
+                              className="hover:bg-destructive/20"
                             >
                               <X className="h-4 w-4" />
                             </Button>
