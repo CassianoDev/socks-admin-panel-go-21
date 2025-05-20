@@ -78,7 +78,10 @@ export default function LoginPage() {
                   className="pl-10"
                 />
               </div>
-              <div className="text-sm text-right">
+              <div className="text-sm flex justify-between">
+                <span className="text-muted-foreground">
+                  Demo: admin@vpnapp.com / admin123
+                </span>
                 <span className="text-muted-foreground cursor-pointer hover:text-primary transition-colors">
                   Forgot password?
                 </span>
