@@ -55,21 +55,44 @@ export default function Servers() {
     if (selectedServer) {
       // Update existing server
       setServers(servers.map(s => 
-        s._id === selectedServer._id ? { ...s, ...data } : s
+        s._id === selectedServer._id ? { 
+          ...s, 
+          ...data,
+          capacity: typeof data.capacity === 'string' ? parseInt(data.capacity, 10) : data.capacity 
+        } : s
       ));
       toast.success(`Server ${data.cloudFlareDomain} updated successfully`);
     } else {
       // Add new server
       const newServer: Server = {
         _id: `new-${Date.now()}`,
-        ...data,
+        cloudFlareDomain: data.cloudFlareDomain,
+        dnsttDomain: data.dnsttDomain || "",
+        country: data.country,
+        city: data.city,
+        state: data.state,
+        ipv4: data.ipv4,
+        ipv6: data.ipv6 || "",
+        portHTTP: data.portHTTP || "80",
+        portTLS: data.portTLS || "443",
+        portUDP: data.portUDP || "0",
+        portDNSTT: data.portDNSTT || "53",
         flag: `${data.country.toLowerCase()}flag.png`,
+        premium: data.premium,
+        invisible: data.invisible,
         usersAdsed: 0,
+        tls: data.tls,
+        quic: data.quic,
+        http: data.http,
+        dnstt: data.dnstt,
         lastPing: Math.floor(Date.now() / 1000),
         UniSkip: false,
         usage: 0,
         onlineUsers: 0,
+        capacity: typeof data.capacity === 'string' ? parseInt(data.capacity, 10) : data.capacity,
         cdnNumber: 0,
+        cdnName: data.cdnName || "",
+        cdn: data.cdn,
         cdns: {
           cloudflare: [],
           googlecloud: [],
@@ -80,6 +103,7 @@ export default function Servers() {
       toast.success(`Server ${data.cloudFlareDomain} added successfully`);
     }
     setSelectedServer(undefined);
+    setDialogOpen(false);
   };
 
   return (

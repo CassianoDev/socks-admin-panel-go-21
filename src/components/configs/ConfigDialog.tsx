@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -29,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Config } from "@/types/types";
+import { Config, ConfigFormValues } from "@/types/types";
 
 interface ConfigDialogProps {
   open: boolean;
@@ -59,8 +58,6 @@ const configFormSchema = z.object({
   multiproxy: z.boolean().default(false),
   forpremium: z.boolean().default(false),
 });
-
-export type ConfigFormValues = z.infer<typeof configFormSchema>;
 
 export default function ConfigDialog({ open, onOpenChange, config, onSubmit }: ConfigDialogProps) {
   const form = useForm<ConfigFormValues>({

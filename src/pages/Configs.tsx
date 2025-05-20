@@ -54,24 +54,43 @@ export default function Configs() {
     if (selectedConfig) {
       // Update existing config
       setConfigs(configs.map(c => 
-        c._id === selectedConfig._id ? { ...c, ...data } : c
+        c._id === selectedConfig._id ? { 
+          ...c, 
+          ...data,
+          testPriority: typeof data.testPriority === 'string' ? parseInt(data.testPriority, 10) : data.testPriority 
+        } : c
       ));
       toast.success(`Configuration ${data.name} updated successfully`);
     } else {
       // Add new config
       const newConfig: Config = {
         _id: `new-${Date.now()}`,
-        ...data,
+        name: data.name,
+        host: data.host,
+        dnsHost: data.dnsHost || "",
+        sni: data.sni || "same",
+        payload: data.payload || "",
+        type: data.type,
+        default: data.default,
         downloaded: 0,
+        cdn: data.cdn,
+        cdnName: data.cdnName || "",
+        cdnNumber: data.cdn ? 1 : 0,
+        notes: data.notes,
+        noteMsg: data.noteMsg || "",
+        testPriority: typeof data.testPriority === 'string' ? parseInt(data.testPriority, 10) : data.testPriority,
+        operator: data.operator,
         onlines: 0,
         votesPositive: 0,
         votesNegative: 0,
-        cdnNumber: data.cdn ? 1 : 0,
+        multiproxy: data.multiproxy,
+        forpremium: data.forpremium
       };
       setConfigs([...configs, newConfig]);
       toast.success(`Configuration ${data.name} added successfully`);
     }
     setSelectedConfig(undefined);
+    setDialogOpen(false);
   };
 
   return (

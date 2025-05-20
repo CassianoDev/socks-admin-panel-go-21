@@ -77,6 +77,63 @@ export interface PremiumUser {
   expired: boolean;
 }
 
+// Formulário para componente UserDialog
+export interface UserFormValues {
+  e2id: string;
+  txid: string;
+  date: Date;
+  dateEnd: Date;
+  pricePayed: string;
+  months: string | number;
+  emaiL: string;
+  suspicious: boolean;
+  used: boolean;
+  expired: boolean;
+}
+
+// Formulário para componente ServerDialog
+export interface ServerFormValues {
+  cloudFlareDomain: string;
+  dnsttDomain: string;
+  country: string;
+  city: string;
+  state: string;
+  ipv4: string;
+  ipv6: string;
+  portHTTP: string;
+  portTLS: string;
+  portUDP: string;
+  portDNSTT: string;
+  premium: boolean;
+  invisible: boolean;
+  tls: boolean;
+  quic: boolean;
+  http: boolean;
+  dnstt: boolean;
+  cdn: boolean;
+  cdnName: string;
+  capacity: string | number;
+}
+
+// Formulário para componente ConfigDialog
+export interface ConfigFormValues {
+  name: string;
+  host: string;
+  dnsHost: string;
+  sni: string;
+  payload: string;
+  type: string;
+  default: boolean;
+  cdn: boolean;
+  cdnName: string;
+  notes: boolean;
+  noteMsg: string;
+  testPriority: string | number;
+  operator: string;
+  multiproxy: boolean;
+  forpremium: boolean;
+}
+
 // App config types
 export interface AppConfig {
   _id: string;
@@ -92,6 +149,22 @@ export interface AppConfig {
   timeStepHour: number;
   serversUpdated: string;
   configsUpdated: string;
+  AgentInstructions: string;
+  AgentApiKeyGemini: string;
+  AgentModel: string;
+}
+
+// App settings form values
+export interface AppSettingsFormValues {
+  versionNow: string | number;
+  buildNow: string | number;
+  adsMediation: boolean;
+  maintenenceMode: boolean;
+  deviceLocked: boolean;
+  appBg: string;
+  curveBg: string;
+  timeMaxHour: string | number;
+  timeStepHour: string | number;
   AgentInstructions: string;
   AgentApiKeyGemini: string;
   AgentModel: string;
@@ -126,4 +199,3 @@ export interface User {
   name: string;
   role: 'admin' | 'user';
 }
-

@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -22,7 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { PremiumUser } from "@/types/types";
+import { PremiumUser, UserFormValues } from "@/types/types";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -55,8 +54,6 @@ const userFormSchema = z.object({
   used: z.boolean().default(true),
   expired: z.boolean().default(false),
 });
-
-export type UserFormValues = z.infer<typeof userFormSchema>;
 
 export default function UserDialog({ open, onOpenChange, user, onSubmit }: UserDialogProps) {
   const form = useForm<UserFormValues>({

@@ -55,9 +55,17 @@ export default function Users() {
       setUsers(users.map(u => 
         u._id === selectedUser._id ? { 
           ...u, 
-          ...data, 
+          emaiL: data.emaiL,
+          e2id: data.e2id,
+          txid: data.txid,
+          date: data.date.toISOString(),
           dateStart: Math.floor(data.date.getTime() / 1000),
           dateEnd: Math.floor(data.dateEnd.getTime() / 1000),
+          pricePayed: data.pricePayed,
+          months: typeof data.months === 'string' ? parseInt(data.months, 10) : data.months,
+          suspicious: data.suspicious,
+          used: data.used,
+          expired: data.expired
         } : u
       ));
       toast.success(`User ${data.emaiL} updated successfully`);
@@ -65,15 +73,23 @@ export default function Users() {
       // Add new user
       const newUser: PremiumUser = {
         _id: `new-${Date.now()}`,
-        ...data,
+        emaiL: data.emaiL,
+        e2id: data.e2id,
+        txid: data.txid,
         date: data.date.toISOString(),
         dateStart: Math.floor(data.date.getTime() / 1000),
         dateEnd: Math.floor(data.dateEnd.getTime() / 1000),
+        pricePayed: data.pricePayed,
+        months: typeof data.months === 'string' ? parseInt(data.months, 10) : data.months,
+        suspicious: data.suspicious,
+        used: data.used,
+        expired: data.expired
       };
       setUsers([...users, newUser]);
       toast.success(`User ${data.emaiL} added successfully`);
     }
     setSelectedUser(undefined);
+    setDialogOpen(false);
   };
 
   return (

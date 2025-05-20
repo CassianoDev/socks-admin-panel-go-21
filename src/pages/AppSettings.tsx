@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -20,6 +19,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { appConfig } from "@/lib/mock";
 import { toast } from "sonner";
+import { AppSettingsFormValues } from "@/types/types";
 
 const appSettingsSchema = z.object({
   versionNow: z.string().transform((val) => parseFloat(val)),
@@ -35,8 +35,6 @@ const appSettingsSchema = z.object({
   AgentApiKeyGemini: z.string().optional(),
   AgentModel: z.string().optional(),
 });
-
-type AppSettingsFormValues = z.infer<typeof appSettingsSchema>;
 
 export default function AppSettings() {
   const form = useForm<AppSettingsFormValues>({

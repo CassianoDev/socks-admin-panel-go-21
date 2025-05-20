@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -22,7 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Server } from "@/types/types";
+import { Server, ServerFormValues } from "@/types/types";
 
 interface ServerDialogProps {
   open: boolean;
@@ -57,8 +56,6 @@ const serverFormSchema = z.object({
       message: "Capacity must be a positive number",
     }),
 });
-
-export type ServerFormValues = z.infer<typeof serverFormSchema>;
 
 export default function ServerDialog({ open, onOpenChange, server, onSubmit }: ServerDialogProps) {
   const form = useForm<ServerFormValues>({
