@@ -12,6 +12,7 @@ import Servers from "./pages/Servers";
 import Configs from "./pages/Configs";
 import Users from "./pages/Users";
 import AppSettings from "./pages/AppSettings";
+import AdLogs from "./pages/AdLogs";
 import NotFound from "./pages/NotFound";
 
 const App = () => (
@@ -27,6 +28,7 @@ const App = () => (
         <Route path="/servers" element={<AppLayout><Servers /></AppLayout>} />
         <Route path="/configs" element={<AppLayout><Configs /></AppLayout>} />
         <Route path="/users" element={<AppLayout><Users /></AppLayout>} />
+        <Route path="/ad-logs" element={<AppLayout><AdLogs /></AppLayout>} />
         <Route path="/app-settings" element={<AppLayout><AppSettings /></AppLayout>} />
         
         <Route path="*" element={<NotFound />} />

@@ -2,7 +2,7 @@
 import { NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronLeft, ChevronRight, LayoutDashboard, Server, Settings, Shield, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, LayoutDashboard, Server, Settings, Shield, Users, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -50,6 +50,12 @@ export default function Sidebar({ open }: SidebarProps) {
               to="/users" 
               icon={<Users className="h-5 w-5" />} 
               title="Premium Users" 
+              collapsed={collapsed}
+            />
+            <MenuItem 
+              to="/ad-logs" 
+              icon={<Activity className="h-5 w-5" />} 
+              title="Ad Logs" 
               collapsed={collapsed}
             />
             <MenuItem 
