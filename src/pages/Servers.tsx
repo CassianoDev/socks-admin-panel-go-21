@@ -13,34 +13,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import ServerTable from "@/components/servers/ServerTable";
 import ServerDialog from "@/components/servers/ServerDialog";
-import { Server } from "@/types/types";
+import { Server, ServerFormValues } from "@/types/types";
 import { servers as mockServers } from "@/lib/mock";
 import { PlusCircle, Search } from "lucide-react";
 import { toast } from "sonner";
-
-// Define ServerFormValues here to avoid import issues
-interface ServerFormValues {
-  cloudFlareDomain: string;
-  dnsttDomain?: string;
-  country: string;
-  city: string;
-  state: string;
-  ipv4: string;
-  ipv6?: string;
-  portHTTP?: string;
-  portTLS?: string;
-  portUDP?: string;
-  portDNSTT?: string;
-  premium: boolean;
-  invisible: boolean;
-  tls: boolean;
-  quic: boolean;
-  http: boolean;
-  dnstt: boolean;
-  cdn: boolean;
-  cdnName?: string;
-  capacity: string | number;
-}
 
 export default function Servers() {
   const [servers, setServers] = useState<Server[]>(mockServers);
@@ -89,11 +65,11 @@ export default function Servers() {
       // Add new server
       const newServer: Server = {
         _id: `new-${Date.now()}`,
-        cloudFlareDomain: data.cloudFlareDomain,
+        cloudFlareDomain: data.cloudFlareDomain || "",
         dnsttDomain: data.dnsttDomain || "",
         country: data.country,
         city: data.city,
-        state: data.state,
+        state: data.state || "",
         ipv4: data.ipv4,
         ipv6: data.ipv6 || "",
         portHTTP: data.portHTTP || "80",
@@ -101,13 +77,13 @@ export default function Servers() {
         portUDP: data.portUDP || "0",
         portDNSTT: data.portDNSTT || "53",
         flag: `${data.country.toLowerCase()}flag.png`,
-        premium: data.premium,
-        invisible: data.invisible,
+        premium: data.premium || false,
+        invisible: data.invisible || false,
         usersAdsed: 0,
-        tls: data.tls,
-        quic: data.quic,
-        http: data.http,
-        dnstt: data.dnstt,
+        tls: data.tls || false,
+        quic: data.quic || false,
+        http: data.http || false,
+        dnstt: data.dnstt || false,
         lastPing: Math.floor(Date.now() / 1000),
         UniSkip: false,
         usage: 0,
@@ -115,7 +91,7 @@ export default function Servers() {
         capacity: typeof data.capacity === 'string' ? parseInt(data.capacity, 10) : data.capacity,
         cdnNumber: 0,
         cdnName: data.cdnName || "",
-        cdn: data.cdn,
+        cdn: data.cdn || false,
         cdns: {
           cloudflare: [],
           googlecloud: [],

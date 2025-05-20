@@ -1,4 +1,3 @@
-
 // Server types
 export interface Server {
   _id: string;
@@ -30,6 +29,35 @@ export interface Server {
   cdnName: string;
   cdn: boolean;
   cdns: {
+    cloudflare: string[];
+    googlecloud: string[];
+    cloudfront: string[];
+  };
+}
+
+// Formulário para componente ServerDialog
+export interface ServerFormValues {
+  cloudFlareDomain: string;
+  dnsttDomain?: string;
+  country: string;
+  city: string;
+  state?: string;
+  ipv4: string;
+  ipv6?: string;
+  portHTTP?: string;
+  portTLS?: string;
+  portUDP?: string;
+  portDNSTT?: string;
+  premium?: boolean;
+  invisible?: boolean;
+  tls?: boolean;
+  quic?: boolean;
+  http?: boolean;
+  dnstt?: boolean;
+  cdn?: boolean;
+  cdnName?: string;
+  capacity: string | number;
+  cdns?: {
     cloudflare: string[];
     googlecloud: string[];
     cloudfront: string[];
@@ -89,30 +117,6 @@ export interface UserFormValues {
   suspicious: boolean;
   used: boolean;
   expired: boolean;
-}
-
-// Formulário para componente ServerDialog
-export interface ServerFormValues {
-  cloudFlareDomain: string;
-  dnsttDomain?: string;
-  country: string;
-  city: string;
-  state: string;
-  ipv4: string;
-  ipv6?: string;
-  portHTTP?: string;
-  portTLS?: string;
-  portUDP?: string;
-  portDNSTT?: string;
-  premium: boolean;
-  invisible: boolean;
-  tls: boolean;
-  quic: boolean;
-  http: boolean;
-  dnstt: boolean;
-  cdn: boolean;
-  cdnName?: string;
-  capacity: string | number;
 }
 
 // Formulário para componente ConfigDialog

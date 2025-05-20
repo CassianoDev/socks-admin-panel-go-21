@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -21,7 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Server } from "@/types/types";
+import { Server, ServerFormValues } from "@/types/types";
 
 // Form schema
 const serverFormSchema = z.object({
@@ -29,7 +30,7 @@ const serverFormSchema = z.object({
   dnsttDomain: z.string().optional(),
   country: z.string().min(1, "Country is required"),
   city: z.string().min(1, "City is required"),
-  state: z.string().min(1, "State is required"),
+  state: z.string().optional(),
   ipv4: z.string().min(1, "IPv4 is required"),
   ipv6: z.string().optional(),
   portHTTP: z.string().optional(),
@@ -47,9 +48,16 @@ const serverFormSchema = z.object({
   capacity: z.union([z.string(), z.number()]).transform(val => 
     typeof val === 'string' ? parseInt(val, 10) : val
   ),
+  cdns: z.object({
+    cloudflare: z.array(z.string()).optional().default([]),
+    googlecloud: z.array(z.string()).optional().default([]),
+    cloudfront: z.array(z.string()).optional().default([])
+  }).optional().default({
+    cloudflare: [],
+    googlecloud: [],
+    cloudfront: []
+  }),
 });
-
-export type ServerFormValues = z.infer<typeof serverFormSchema>;
 
 interface ServerDialogProps {
   open: boolean;
